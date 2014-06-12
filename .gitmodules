@@ -1,0 +1,4 @@
+[submodule "js/lib/dd"]
+	path = js/lib/dd
+	url = git@github.com:drdelambre/drdelambre.git
+	ignore = dirty

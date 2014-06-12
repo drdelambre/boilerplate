@@ -1,0 +1,16 @@
+{
+  "name": "BlankProject",
+  "version": "0.1.0",
+  "description": "This is a blank project",
+  "devDependencies": {
+    "grunt": "~0.4.4",
+    "grunt-contrib-watch": "~0.4.4",
+    "grunt-contrib-jshint": "~0.10.0",
+    "grunt-contrib-requirejs": "~0.4.1",
+    "grunt-sass": "~0.13.0",
+    "time-grunt": "~0.1.1"
+  },
+  "author": "Alex Boatwright <drdelambre@gmail.com>",
+  "license": "MIT",
+  "private": true
+}
