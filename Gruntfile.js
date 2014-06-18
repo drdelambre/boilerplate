@@ -1,24 +1,40 @@
 module.exports = function (grunt) {
 	// Displays the elapsed execution time of grunt tasks
 	require('time-grunt')(grunt);
+	grunt.loadNpmTasks('grunt-contrib-clean');
 	grunt.loadNpmTasks('grunt-contrib-jshint');
 	grunt.loadNpmTasks('grunt-contrib-watch');
 	grunt.loadNpmTasks('grunt-contrib-requirejs');
 	grunt.loadNpmTasks('grunt-sass');
+	grunt.loadNpmTasks('grunt-include-replace');
 
 	// Project configuration.
 	grunt.initConfig({
 		pkg: grunt.file.readJSON('package.json'),
 
-		watch : {
+		watch: {
+			grunt: {
+				files: ['Gruntfile.js'],
+				tasks: ['clean','sass:dev','jshint','requirejs:dev','includereplace:dev']
+			},
 			sass: {
 				files: ['css/src/**/*.{scss,sass}'],
-				tasks: ['sass:dev']
+				tasks: ['clean:css','sass:dev']
 			},
 			js: {
-				files: ['Gruntfile.js','js/config.js','js/lib/**/*.js','js/src/**/*.js'],
-				tasks: ['jshint','requirejs']
+				files: ['js/config.js','js/lib/**/*.js','js/src/**/*.js'],
+				tasks: ['clean:js','jshint','requirejs:dev']
+			},
+			views: {
+				files: ['views/**/*.view'],
+				tasks: ['clean:markup','includereplace:dev']
 			}
+		},
+
+		clean: {
+			markup: ['index.html'],
+			css: ['css/styles.css*'],
+			js: ['js/script.js*']
 		},
 
 		jshint: {
@@ -78,7 +94,24 @@ module.exports = function (grunt) {
 		},
 
 		requirejs: {
-			compile: {
+			prod: {
+				options: {
+					baseUrl: '.',
+					mainConfigFile: 'js/config.js',
+					include: ['js/config'],
+					name: 'js/almond.js',
+					out: 'js/script.js',
+					optimize : 'uglify2',
+					preserveLicenseComments: false,
+					generateSourceMaps : false,
+
+					uglify2: {
+						warnings: true,
+						mangle: false
+					}
+				}
+			},
+			dev: {
 				options: {
 					baseUrl: '.',
 					mainConfigFile: 'js/config.js',
@@ -95,6 +128,29 @@ module.exports = function (grunt) {
 					}
 				}
 			}
+		},
+
+		includereplace: {
+			prod: {
+				options: {
+					globals: {
+						title: 'unconfigured website',
+						description: 'please configure your website'
+					}
+				},
+				src: 'views/main.view',
+				dest: 'index.html'
+			},
+			dev: {
+				options: {
+					globals: {
+						title: 'unconfigured website',
+						description: 'please configure your website'
+					}
+				},
+				src: 'views/main.view',
+				dest: 'index.html'
+			}
 		}
 	});
 
@@ -102,6 +158,6 @@ module.exports = function (grunt) {
 	grunt.registerTask('default', ['watch']);
 
 	// Release Task
-	grunt.registerTask('build', ['sass:dev','jshint','requirejs']);
-	grunt.registerTask('deploy', ['sass:prod','jshint','requirejs']);
+	grunt.registerTask('build', ['clean','sass:dev','jshint','requirejs:dev','includereplace:dev']);
+	grunt.registerTask('deploy', ['clean','sass:prod','jshint','requirejs:prod','includereplace:prod']);
 };
