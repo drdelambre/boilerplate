@@ -1,16 +1,18 @@
 module.exports = function (grunt) {
 	// Displays the elapsed execution time of grunt tasks
 	require('time-grunt')(grunt);
-	grunt.loadNpmTasks('grunt-contrib-clean');
 	grunt.loadNpmTasks('grunt-contrib-jshint');
 	grunt.loadNpmTasks('grunt-contrib-watch');
 	grunt.loadNpmTasks('grunt-contrib-requirejs');
-	grunt.loadNpmTasks('grunt-sass');
+	grunt.loadNpmTasks('grunt-contrib-clean');
 	grunt.loadNpmTasks('grunt-include-replace');
+	grunt.loadNpmTasks('grunt-sass');
+	grunt.loadNpmTasks('grunt-ssh');
 
 	// Project configuration.
 	grunt.initConfig({
 		pkg: grunt.file.readJSON('package.json'),
+		secret: grunt.file.readJSON('secret.json'),
 
 		watch: {
 			grunt: {
@@ -33,7 +35,7 @@ module.exports = function (grunt) {
 
 		clean: {
 			markup: ['index.html'],
-			css: ['css/styles.css*'],
+			css: ['css/styles.css*','css/fold-line.css*'],
 			js: ['js/script.js*']
 		},
 
@@ -73,22 +75,21 @@ module.exports = function (grunt) {
 		},
 
 		sass: {
+			options: {
+				imagePath: '/images/',
+				sourceMap: true
+			},
 			prod: {
-				options: {
-					imagePath: '/images/',
-					outputStyle: 'compressed'
-				},
+				options: { outputStyle: 'compressed' },
 				files: {
-					'css/styles.css': 'css/src/styles.scss'
+					'css/styles.css': 'css/src/styles.scss',
+					'css/fold-line.css': 'css/src/fold-line.scss'
 				}
 			},
 			dev: {
-				options: {
-					imagePath: '/images/',
-					sourceMap: true
-				},
 				files: {
-					'css/styles.css': 'css/src/styles.scss'
+					'css/styles.css': 'css/src/styles.scss',
+					'css/fold-line.css': 'css/src/fold-line.scss'
 				}
 			}
 		},
@@ -151,13 +152,52 @@ module.exports = function (grunt) {
 				src: 'views/main.view',
 				dest: 'index.html'
 			}
+		},
+
+		sftp: {
+			options: {
+				path: '<%= secret.root %>',
+				host: '<%= secret.host %>',
+				username: '<%= secret.username %>',
+				password: '<%= secret.password %>',
+				showProgress: false,
+				createDirectories: true
+			},
+			core: {
+				files: { './': ['index.html','css/styles.css*','js/script.js*'] }
+			},
+			assets: {
+				files: { './': ['images/*','favicon/*','fonts/*'] }
+			}
 		}
 	});
 
 	// Default Task
 	grunt.registerTask('default', ['watch']);
 
-	// Release Task
-	grunt.registerTask('build', ['clean','sass:dev','jshint','requirejs:dev','includereplace:dev']);
-	grunt.registerTask('deploy', ['clean','sass:prod','jshint','requirejs:prod','includereplace:prod']);
+	// Release Tasks
+	grunt.registerTask('build', [
+		'clean',
+		'sass:dev',
+		'jshint',
+		'requirejs:dev',
+		'includereplace:dev'
+	]);
+	grunt.registerTask('deploy', [
+		'clean',
+		'sass:prod',
+		'jshint',
+		'requirejs:prod',
+		'includereplace:prod',
+		'sftp:core'
+	]);
+	grunt.registerTask('refresh', [
+		'clean',
+		'sass:prod',
+		'jshint',
+		'requirejs:prod',
+		'includereplace:prod',
+		'sftp:core',
+		'sftp:assets'
+	]);
 };
