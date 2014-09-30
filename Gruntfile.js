@@ -1,30 +1,31 @@
 module.exports = function (grunt) {
 	// Displays the elapsed execution time of grunt tasks
-	require('time-grunt')(grunt);
 	grunt.loadNpmTasks('grunt-contrib-jshint');
 	grunt.loadNpmTasks('grunt-contrib-watch');
 	grunt.loadNpmTasks('grunt-contrib-requirejs');
 	grunt.loadNpmTasks('grunt-contrib-clean');
 	grunt.loadNpmTasks('grunt-include-replace');
 	grunt.loadNpmTasks('grunt-sass');
-	grunt.loadNpmTasks('grunt-ssh');
 
 	// Project configuration.
 	grunt.initConfig({
 		pkg: grunt.file.readJSON('package.json'),
-		secret: grunt.file.readJSON('secret.json'),
 
 		watch: {
 			grunt: {
 				files: ['Gruntfile.js'],
 				tasks: ['clean','sass:dev','jshint','requirejs:dev','includereplace:dev']
 			},
+			foldline: {
+				files: ['sass/fold-line.{scss,sass}','sass/fold-line/**/*.{scss,sass}'],
+				tasks: ['clean:sass','clean:markup','sass:dev','includereplace:dev']
+			},
 			sass: {
-				files: ['css/src/**/*.{scss,sass}'],
+				files: ['sass/**/*.{scss,sass}','!sass/fold-line.{scss,sass}','!sass/fold-line/**/*.{scss,sass}'],
 				tasks: ['clean:css','sass:dev']
 			},
 			js: {
-				files: ['js/config.js','js/lib/**/*.js','js/src/**/*.js'],
+				files: ['lib/**/*.js'],
 				tasks: ['clean:js','jshint','requirejs:dev']
 			},
 			views: {
@@ -34,13 +35,13 @@ module.exports = function (grunt) {
 		},
 
 		clean: {
-			markup: ['index.html'],
-			css: ['css/styles.css*','css/fold-line.css*'],
-			js: ['js/script.js*']
+			markup: ['build/index.html'],
+			css: ['build/css/styles.css*','build/css/fold-line.css*'],
+			js: ['build/js/script.js*']
 		},
 
 		jshint: {
-			files: ['Gruntfile.js','js/config.js','js/src/**/*.js'],
+			files: ['Gruntfile.js','lib/**/*.js'],
 			options: {
 				curly: true,
 				eqeqeq: true,
@@ -69,7 +70,8 @@ module.exports = function (grunt) {
 					define:     true,
 
 					// Environments
-					console:    true
+					console:    true,
+					process:    true
 				}
 			}
 		},
@@ -82,14 +84,14 @@ module.exports = function (grunt) {
 			prod: {
 				options: { outputStyle: 'compressed' },
 				files: {
-					'css/styles.css': 'css/src/styles.scss',
-					'css/fold-line.css': 'css/src/fold-line.scss'
+					'build/css/styles.css': 'sass/styles.scss',
+					'build/css/fold-line.css': 'sass/fold-line.scss'
 				}
 			},
 			dev: {
 				files: {
-					'css/styles.css': 'css/src/styles.scss',
-					'css/fold-line.css': 'css/src/fold-line.scss'
+					'build/css/styles.css': 'sass/styles.scss',
+					'build/css/fold-line.css': 'sass/fold-line.scss'
 				}
 			}
 		},
@@ -98,10 +100,10 @@ module.exports = function (grunt) {
 			prod: {
 				options: {
 					baseUrl: '.',
-					mainConfigFile: 'js/config.js',
-					include: ['js/config'],
-					name: 'js/almond.js',
-					out: 'js/script.js',
+					mainConfigFile: 'lib/builder/config.js',
+					include: ['lib/builder/config'],
+					name: 'lib/builder/almond.js',
+					out: 'build/js/script.js',
 					optimize : 'uglify2',
 					preserveLicenseComments: false,
 					generateSourceMaps : false,
@@ -115,10 +117,10 @@ module.exports = function (grunt) {
 			dev: {
 				options: {
 					baseUrl: '.',
-					mainConfigFile: 'js/config.js',
-					include: ['js/config'],
-					name: 'js/almond.js',
-					out: 'js/script.js',
+					mainConfigFile: 'lib/builder/config.js',
+					include: ['lib/builder/config'],
+					name: 'lib/builder/almond.js',
+					out: 'build/js/script.js',
 					optimize : 'uglify2',
 					preserveLicenseComments: false,
 					generateSourceMaps : true,
@@ -140,7 +142,7 @@ module.exports = function (grunt) {
 					}
 				},
 				src: 'views/main.view',
-				dest: 'index.html'
+				dest: 'build/index.html'
 			},
 			dev: {
 				options: {
@@ -150,24 +152,7 @@ module.exports = function (grunt) {
 					}
 				},
 				src: 'views/main.view',
-				dest: 'index.html'
-			}
-		},
-
-		sftp: {
-			options: {
-				path: '<%= secret.root %>',
-				host: '<%= secret.host %>',
-				username: '<%= secret.username %>',
-				password: '<%= secret.password %>',
-				showProgress: false,
-				createDirectories: true
-			},
-			core: {
-				files: { './': ['index.html','css/styles.css*','js/script.js*'] }
-			},
-			assets: {
-				files: { './': ['images/*','favicon/*','fonts/*'] }
+				dest: 'build/index.html'
 			}
 		}
 	});
@@ -182,22 +167,5 @@ module.exports = function (grunt) {
 		'jshint',
 		'requirejs:dev',
 		'includereplace:dev'
-	]);
-	grunt.registerTask('deploy', [
-		'clean',
-		'sass:prod',
-		'jshint',
-		'requirejs:prod',
-		'includereplace:prod',
-		'sftp:core'
-	]);
-	grunt.registerTask('refresh', [
-		'clean',
-		'sass:prod',
-		'jshint',
-		'requirejs:prod',
-		'includereplace:prod',
-		'sftp:core',
-		'sftp:assets'
 	]);
 };
