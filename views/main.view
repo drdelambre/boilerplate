@@ -4,5 +4,6 @@
 	@@include('./header.view')
 	</head>
 	<body>
+		<canvas id="workarea"></canvas>
 	</body>
 </html>
